@@ -13,7 +13,7 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "monk": "^7.3.0",
     "url": "^0.11.0",
     "yup": "^0.29.1"
