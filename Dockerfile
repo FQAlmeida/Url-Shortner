@@ -1,11 +1,11 @@
-FROM node:14
+FROM node
 
 RUN mkdir /app
 WORKDIR /app
 
 ENV PATH /app/node_modules/.bin:$PATH
 
-RUN apt-get update && apt-get install netcat -y
+RUN apt-get update && apt-get install netcat-traditional -y
 
 ADD package.json yarn.lock /app/
 RUN yarn install
