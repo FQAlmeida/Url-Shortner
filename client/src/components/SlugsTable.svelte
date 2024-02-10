@@ -41,7 +41,7 @@
 						<Button size="sm"><TrashBinSolid size="sm" /></Button>
 					</TableBodyCell>
 					<TableBodyCell tdClass="">
-						<Button size="sm" href={"/"+slug.slug}>
+						<Button size="sm" href={'/' + slug.slug} target="_blank">
 							Testar
 						</Button>
 					</TableBodyCell>
