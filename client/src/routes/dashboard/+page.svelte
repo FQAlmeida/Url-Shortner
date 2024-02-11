@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { goto } from '$app/navigation';
 	import SlugCreateForm from '@components/SlugCreateForm.svelte';
 	import SlugsTable from '@components/SlugsTable.svelte';

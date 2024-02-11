@@ -7,6 +7,8 @@
 
 	import type { LayoutData } from './$types';
 	import { onMount } from 'svelte';
+	import { slugs } from '@store/slugs';
+	import Footer from '@components/Footer.svelte';
 	export let data: LayoutData;
 
 	let loading: boolean = true;
@@ -19,8 +21,6 @@
 
 	onMount(async () => {
 		const user: any = await data.getAuthUser();
-		console.log(user);
-		
 		const loggedIn = !!user && user?.emailVerified;
 		session.update((cur: any) => {
 			loading = false;
@@ -37,8 +37,9 @@
 {#if loading}
 	<SpinnerLoader />
 {:else}
-<div class="flex flex-col min-w-full min-h-screen">
-	<Navbar />
+	<div class="flex min-h-screen min-w-full flex-col">
+		<Navbar />
 		<slot />
+		<Footer />
 	</div>
 {/if}

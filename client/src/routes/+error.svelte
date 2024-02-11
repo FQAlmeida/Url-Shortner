@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { Heading, P } from "flowbite-svelte";
 
   export let message = "404 - Page Not Found";
