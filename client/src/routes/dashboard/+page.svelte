@@ -10,10 +10,11 @@
 	}
 </script>
 
-<div class="container mx-auto flex flex-col gap-8">
-    <Heading class="text-3xl">Dashboard</Heading>
-    <hr/>
+<div class="flex flex-col gap-8">
+	<Heading class="text-3xl">Dashboard</Heading>
+	<hr />
 	<SlugCreateForm />
-    <hr/>
+	<hr />
 	<SlugsTable />
+	<hr class="pt-4" />
 </div>

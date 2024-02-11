@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -79,6 +80,17 @@ func getSlugs(uid string, client *mongo.Client) ([]*Slug, error) {
 	}}
 	return filterTasks(filter, client)
 }
+func getSlug(slug string, client *mongo.Client) (*Slug, error) {
+	filter := bson.D{{
+		Key:   "slug",
+		Value: slug,
+	}}
+	slugs, err := filterTasks(filter, client)
+	if len(slugs) == 0 {
+		return nil, errors.New("Slug not found")
+	}
+	return slugs[len(slugs)-1], err
+}
 
 func filterTasks(filter interface{}, client *mongo.Client) ([]*Slug, error) {
 	// A slice of slugs for storing the decoded documents
@@ -154,6 +166,15 @@ func main() {
 			ctx.JSON(500, gin.H{})
 		}
 		ctx.JSON(200, slugs)
+	})
+	r.GET("/slug", func(ctx *gin.Context) {
+		slug := ctx.Query("slug")
+		slug_data, err := getSlug(slug, client)
+		if err != nil {
+			ctx.JSON(400, gin.H{})
+			return
+		}
+		ctx.JSON(200, slug_data)
 	})
 	r.POST("/slugs", func(ctx *gin.Context) {
 		body := SlugCreate{}

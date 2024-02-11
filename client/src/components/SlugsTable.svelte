@@ -31,19 +31,19 @@
 	<Heading class="text-center text-2xl">Gereciar Slugs</Heading>
 	<Table shadow hoverable>
 		<TableHead>
-			<TableHeadCell>ID</TableHeadCell>
-			<TableHeadCell>Redirect</TableHeadCell>
-			<TableHeadCell>Slug</TableHeadCell>
-			<TableHeadCell></TableHeadCell>
-			<TableHeadCell></TableHeadCell>
+			<TableHeadCell colspan="1">ID</TableHeadCell>
+			<TableHeadCell colspan="3">Redirect</TableHeadCell>
+			<TableHeadCell colspan="3">Slug</TableHeadCell>
+			<TableHeadCell colspan="2"></TableHeadCell>
+			<TableHeadCell colspan="1"></TableHeadCell>
 		</TableHead>
 		<TableBody tableBodyClass="divide-y">
 			{#each $slugs as slug}
 				<TableBodyRow>
-					<TableBodyCell>{slug.id}</TableBodyCell>
-					<TableBodyCell>{slug.redirect}</TableBodyCell>
-					<TableBodyCell>{slug.slug}</TableBodyCell>
-					<TableBodyCell tdClass="">
+					<TableBodyCell colspan="1">{slug.id}</TableBodyCell>
+					<TableBodyCell colspan="3">{slug.redirect}</TableBodyCell>
+					<TableBodyCell colspan="3">{slug.slug}</TableBodyCell>
+					<TableBodyCell colspan="2" tdClass="">
 						<Button
 							size="sm"
 							on:click={() => {
@@ -61,7 +61,7 @@
 							}}><TrashBinSolid size="sm" /></Button
 						>
 					</TableBodyCell>
-					<TableBodyCell tdClass="">
+					<TableBodyCell colspan="1" tdClass="">
 						<Button size="sm" href={'/' + slug.slug} target="_blank">
 							Testar
 						</Button>

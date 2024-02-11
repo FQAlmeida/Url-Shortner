@@ -27,7 +27,6 @@ const create_slugs_store = async () => {
     const reset_slugs = async () => {
         const uri = new URL("http://localhost:8080/slugs");
         uri.searchParams.append("userid", get(session).user?.uid ?? "-1");
-        console.log(get(session));
         try {
             const response = await fetch(uri);
             const slugs: Slug[] = await response.json();

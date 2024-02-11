@@ -39,7 +39,9 @@
 {:else}
 	<div class="flex min-h-screen min-w-full flex-col">
 		<Navbar />
-		<slot />
+		<div class="container mx-auto">
+			<slot />
+		</div>
 		<Footer />
 	</div>
 {/if}
