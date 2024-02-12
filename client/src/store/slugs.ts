@@ -7,6 +7,9 @@ export type Slug = {
     redirect: string;
 };
 
+// const SERVER_HOST = "http://35.190.148.225:8080";
+const SERVER_HOST = "http://localhost:8080";
+
 const create_slugs_store = async () => {
     const { update, subscribe, set } = writable<Slug[]>([{
         id: '1',
@@ -25,10 +28,10 @@ const create_slugs_store = async () => {
     }]);
 
     const reset_slugs = async () => {
-        const uri = new URL("http://localhost:8080/slugs");
+        const uri = new URL(`${SERVER_HOST}/slugs`);
         uri.searchParams.append("userid", get(session).user?.uid ?? "-1");
         try {
-            const response = await fetch(uri);
+            const response = await fetch(uri, { mode: "cors" });
             const slugs: Slug[] = await response.json();
             set(slugs);
         } catch (e) {
@@ -43,7 +46,7 @@ const create_slugs_store = async () => {
     });
 
     const add_slug = async (slug: Omit<Slug, "id">) => {
-        const uri = new URL("http://localhost:8080/slugs");
+        const uri = new URL(`${SERVER_HOST}/slugs`);
         uri.searchParams.append("uid", get(session).user?.uid ?? "-1");
         const response = await fetch(uri, {
             method: "POST", // *GET, POST, PUT, DELETE, etc.
@@ -63,7 +66,7 @@ const create_slugs_store = async () => {
     };
 
     const update_slug = async (slug: Slug) => {
-        const uri = new URL("http://localhost:8080/slugs");
+        const uri = new URL(`${SERVER_HOST}/slugs`);
         const _ = await fetch(uri, {
             method: "PUT", // *GET, POST, PUT, DELETE, etc.
             mode: "cors", // no-cors, *cors, same-origin
@@ -81,7 +84,7 @@ const create_slugs_store = async () => {
     };
 
     const remove_slug = async (id: string) => {
-        const uri = new URL("http://localhost:8080/slugs");
+        const uri = new URL(`${SERVER_HOST}/slugs`);
         uri.searchParams.append("uid", get(session).user?.uid ?? "-1");
         uri.searchParams.append("id", id);
         const _ = await fetch(uri, {
