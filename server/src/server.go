@@ -3,14 +3,20 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"net/url"
+	"os"
 	"time"
 
 	firebase "firebase.google.com/go"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
-	"github.com/gin-contrib/cors"
+	"github.com/joho/godotenv"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -129,9 +135,20 @@ func filterTasks(filter interface{}, client *mongo.Client) ([]*Slug, error) {
 }
 
 func loadMongoClient() (*mongo.Client, error) {
+	db_username := url.QueryEscape(os.Getenv("DATABASE_USERNAME"))
+	db_password := url.QueryEscape(os.Getenv("DATABASE_PASSWORD"))
+	db_host := url.QueryEscape(os.Getenv("DATABASE_HOST"))
+
+	db_uri := fmt.Sprintf(
+		"mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority", db_username, db_password, db_host,
+	)
+	log.Println(db_uri, db_username, db_password, db_host)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://mongodb:27017"))
+	client, err := mongo.Connect(ctx,
+		options.Client().ApplyURI(
+			db_uri))
 	if err != nil {
 		log.Fatal(err)
 		return client, err
@@ -145,16 +162,17 @@ func loadMongoClient() (*mongo.Client, error) {
 }
 
 func main() {
+	godotenv.Load(".env")
+	client, err := loadMongoClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	app, err := firebase.NewApp(context.Background(), nil)
 	if err != nil {
 		log.Fatalf("error initializing app: %v\n", err)
 	}
 	app.Auth(context.Background())
-
-	client, err := loadMongoClient()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	r := gin.Default()
 	r.Use(cors.Default())

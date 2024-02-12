@@ -39,7 +39,7 @@
 {:else}
 	<div class="flex min-h-screen min-w-full flex-col">
 		<Navbar />
-		<div class="container mx-auto">
+		<div class="container mx-auto mb-auto">
 			<slot />
 		</div>
 		<Footer />
