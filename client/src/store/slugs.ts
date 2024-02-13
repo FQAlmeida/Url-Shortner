@@ -7,8 +7,8 @@ export type Slug = {
     redirect: string;
 };
 
-// const SERVER_HOST = "http://35.190.148.225:8080";
-const SERVER_HOST = "http://localhost:8080";
+const SERVER_HOST = "http://35.190.148.225:8080";
+// const SERVER_HOST = "http://localhost:8080";
 
 const create_slugs_store = async () => {
     const { update, subscribe, set } = writable<Slug[]>([]);
