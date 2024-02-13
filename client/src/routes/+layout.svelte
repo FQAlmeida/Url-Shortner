@@ -21,6 +21,7 @@
 
 	onMount(async () => {
 		const user: any = await data.getAuthUser();
+
 		const loggedIn = !!user && user?.emailVerified;
 		session.update((cur: any) => {
 			loading = false;
@@ -34,14 +35,14 @@
 	});
 </script>
 
-{#if loading}
+<!-- {#if loading}
 	<SpinnerLoader />
-{:else}
-	<div class="flex min-h-screen min-w-full flex-col">
-		<Navbar />
-		<div class="container mx-auto mb-auto">
-			<slot />
-		</div>
-		<Footer />
+{:else} -->
+<div class="flex min-h-screen min-w-full flex-col">
+	<Navbar />
+	<div class="container mx-auto mb-auto">
+		<slot />
 	</div>
-{/if}
+	<Footer />
+</div>
+<!-- {/if} -->

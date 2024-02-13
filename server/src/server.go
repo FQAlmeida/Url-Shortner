@@ -10,6 +10,8 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/auth"
+	"google.golang.org/api/option"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -54,7 +56,8 @@ func deleteSlug(slug_id primitive.ObjectID, uid string, client *mongo.Client) er
 		Key:   "id",
 		Value: slug_id,
 	}}
-	_, err := collection.DeleteMany(ctx, filter)
+	log.Println(filter)
+	_, err := collection.DeleteOne(ctx, filter)
 	return err
 }
 func updateSlug(slug *Slug, client *mongo.Client) error {
@@ -142,7 +145,6 @@ func loadMongoClient() (*mongo.Client, error) {
 	db_uri := fmt.Sprintf(
 		"mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority", db_username, db_password, db_host,
 	)
-	log.Println(db_uri, db_username, db_password, db_host)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -161,27 +163,63 @@ func loadMongoClient() (*mongo.Client, error) {
 	return client, err
 }
 
+func loadFirebaseClient() (*auth.Client, error) {
+	// firebase_api_key := os.Getenv("FIREBASE_API_KEY")
+	// firebase_app_id := os.Getenv("FIREBASE_APP_ID")
+	// firebase_auth_domain := os.Getenv("FIREBASE_AUTH_DOMAIN")
+
+	opts := option.WithCredentialsFile("url-shortner-fqa-firebase-adminsdk-zmv68-a3dcfdbe88.json")
+
+	app, err := firebase.NewApp(context.Background(), nil, opts)
+	if err != nil {
+		log.Fatalf("error initializing app: %v\n", err)
+	}
+	fireAuth, err := app.Auth(context.Background())
+	if err != nil {
+		log.Fatalf("error initializing firebase auth: %v\n", err)
+	}
+	return fireAuth, err
+}
+
+func checkUserExists(userid string, firebaseAuth *auth.Client) (bool, error) {
+	result, err := firebaseAuth.GetUser(context.Background(), userid)
+	if auth.IsUserNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return result != nil, err
+}
+
 func main() {
 	godotenv.Load(".env")
 	client, err := loadMongoClient()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	app, err := firebase.NewApp(context.Background(), nil)
+	firebaseAuth, err := loadFirebaseClient()
 	if err != nil {
-		log.Fatalf("error initializing app: %v\n", err)
+		log.Fatal(err)
 	}
-	app.Auth(context.Background())
 
 	r := gin.Default()
 	r.Use(cors.Default())
 	r.GET("/slugs", func(ctx *gin.Context) {
 		id := ctx.Query("userid")
+		exists, err := checkUserExists(id, firebaseAuth)
+		if err != nil {
+			ctx.JSON(500, gin.H{"err": err})
+			return
+		}
+		if !exists {
+			ctx.JSON(400, gin.H{"err": errors.New("USER not found")})
+			return
+		}
 		slugs, err := getSlugs(id, client)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(500, gin.H{})
+			return
 		}
 		ctx.JSON(200, slugs)
 	})
@@ -198,10 +236,20 @@ func main() {
 		body := SlugCreate{}
 		err := ctx.ShouldBindBodyWith(&body, binding.JSON)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(400, err)
+			return
 		}
-		log.Println(body)
+
+		exists, err := checkUserExists(body.UserID, firebaseAuth)
+		if err != nil {
+			ctx.JSON(500, gin.H{"err": err})
+			return
+		}
+		if !exists {
+			ctx.JSON(400, gin.H{"err": errors.New("USER not found")})
+			return
+		}
+
 		var slug = &Slug{
 			ID:     primitive.NewObjectID(), // use client to gen uuid
 			UserID: body.UserID,
@@ -211,24 +259,35 @@ func main() {
 
 		err = createSlug(slug, client)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(500, err)
+			return
 		}
 
 		ctx.JSON(200, slug)
 	})
 	r.DELETE("/slugs", func(ctx *gin.Context) {
 		uid := ctx.Query("userid")
+
+		exists, err := checkUserExists(uid, firebaseAuth)
+		if err != nil {
+			ctx.JSON(500, gin.H{"err": err})
+			return
+		}
+		if !exists {
+			ctx.JSON(400, gin.H{"err": errors.New("USER not found")})
+			return
+		}
+
 		id_str := ctx.Query("id")
 		id, err := primitive.ObjectIDFromHex(id_str)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(500, err)
+			return
 		}
 		err = deleteSlug(id, uid, client)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(500, err)
+			return
 		}
 
 		ctx.JSON(200, bson.D{})
@@ -237,13 +296,24 @@ func main() {
 		slug := &Slug{}
 		err := ctx.ShouldBindBodyWith(slug, binding.JSON)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(400, err)
+			return
 		}
+
+		exists, err := checkUserExists(slug.UserID, firebaseAuth)
+		if err != nil {
+			ctx.JSON(500, gin.H{"err": err})
+			return
+		}
+		if !exists {
+			ctx.JSON(400, gin.H{"err": errors.New("USER not found")})
+			return
+		}
+
 		err = updateSlug(slug, client)
 		if err != nil {
-			log.Fatal(err)
 			ctx.JSON(500, err)
+			return
 		}
 		ctx.JSON(200, bson.D{})
 	})

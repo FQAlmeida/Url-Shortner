@@ -29,21 +29,24 @@
 
 <div class="flex flex-col gap-4">
 	<Heading class="text-center text-2xl">Gereciar Slugs</Heading>
-	<Table shadow hoverable>
+	<Table shadow hoverable divClass="w-full table-fixed">
 		<TableHead>
-			<TableHeadCell colspan="1">ID</TableHeadCell>
-			<TableHeadCell colspan="3">Redirect</TableHeadCell>
-			<TableHeadCell colspan="3">Slug</TableHeadCell>
+			<TableHeadCell>ID</TableHeadCell>
+			<TableHeadCell>Redirect</TableHeadCell>
+			<TableHeadCell>Slug</TableHeadCell>
 			<TableHeadCell colspan="2"></TableHeadCell>
-			<TableHeadCell colspan="1"></TableHeadCell>
 		</TableHead>
 		<TableBody tableBodyClass="divide-y">
 			{#each $slugs as slug}
 				<TableBodyRow>
-					<TableBodyCell colspan="1">{slug.id}</TableBodyCell>
-					<TableBodyCell colspan="3">{slug.redirect}</TableBodyCell>
-					<TableBodyCell colspan="3">{slug.slug}</TableBodyCell>
-					<TableBodyCell colspan="2" tdClass="">
+					<TableBodyCell tdClass="px-6 py-4 whitespace-wrap font-medium text-balance w-min">{slug.id}</TableBodyCell>
+					<TableBodyCell tdClass="px-6 py-4 whitespace-wrap font-medium text-balance w-min">
+						{slug.redirect}
+					</TableBodyCell>
+					<TableBodyCell tdClass="px-6 py-4 whitespace-wrap font-medium text-balance w-min">
+						{slug.slug}
+					</TableBodyCell>
+					<TableBodyCell tdClass="">
 						<Button
 							size="sm"
 							on:click={() => {
@@ -58,10 +61,12 @@
 							on:click={() => {
 								show_delete_modal = true;
 								current_delete = slug.id;
-							}}><TrashBinSolid size="sm" /></Button
+							}}
 						>
+							<TrashBinSolid size="sm" />
+						</Button>
 					</TableBodyCell>
-					<TableBodyCell colspan="1" tdClass="">
+					<TableBodyCell tdClass="">
 						<Button size="sm" href={'/' + slug.slug} target="_blank">
 							Testar
 						</Button>

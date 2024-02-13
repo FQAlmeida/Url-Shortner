@@ -11,21 +11,7 @@ export type Slug = {
 const SERVER_HOST = "http://localhost:8080";
 
 const create_slugs_store = async () => {
-    const { update, subscribe, set } = writable<Slug[]>([{
-        id: '1',
-        slug: 'apple-macbook-pro',
-        redirect: '/products/apple-macbook-pro'
-    },
-    {
-        id: '2',
-        slug: 'microsoft-surface-pro',
-        redirect: '/products/microsoft-surface-pro'
-    },
-    {
-        id: '3',
-        slug: 'magic-mouse-2',
-        redirect: '/products/magic-mouse-2'
-    }]);
+    const { update, subscribe, set } = writable<Slug[]>([]);
 
     const reset_slugs = async () => {
         const uri = new URL(`${SERVER_HOST}/slugs`);
@@ -33,6 +19,9 @@ const create_slugs_store = async () => {
         try {
             const response = await fetch(uri, { mode: "cors" });
             const slugs: Slug[] = await response.json();
+            if (!Array.isArray(slugs)) {
+                return;
+            }
             set(slugs);
         } catch (e) {
             console.error(e);
@@ -47,7 +36,7 @@ const create_slugs_store = async () => {
 
     const add_slug = async (slug: Omit<Slug, "id">) => {
         const uri = new URL(`${SERVER_HOST}/slugs`);
-        uri.searchParams.append("uid", get(session).user?.uid ?? "-1");
+        uri.searchParams.append("userid", get(session).user?.uid ?? "-1");
         const response = await fetch(uri, {
             method: "POST", // *GET, POST, PUT, DELETE, etc.
             mode: "cors", // no-cors, *cors, same-origin
@@ -85,7 +74,7 @@ const create_slugs_store = async () => {
 
     const remove_slug = async (id: string) => {
         const uri = new URL(`${SERVER_HOST}/slugs`);
-        uri.searchParams.append("uid", get(session).user?.uid ?? "-1");
+        uri.searchParams.append("userid", get(session).user?.uid ?? "-1");
         uri.searchParams.append("id", id);
         const _ = await fetch(uri, {
             method: "DELETE", // *GET, POST, PUT, DELETE, etc.

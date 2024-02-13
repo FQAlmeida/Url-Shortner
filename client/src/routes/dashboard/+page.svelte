@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import SlugCreateForm from '@components/SlugCreateForm.svelte';
 	import SlugsTable from '@components/SlugsTable.svelte';
 	import { session } from '@store/auth';
 	import { Heading } from 'flowbite-svelte';
 
-	if (!$session.loggedIn) {
+	if (!$session.loggedIn && !$session.loading && browser) {
 		goto('/login');
 	}
 </script>

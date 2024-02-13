@@ -172,3 +172,5 @@ dist
 package
 
 # End of https://www.toptal.com/developers/gitignore/api/go,svelte,node
+
+**/url-shortner-fqa-firebase-adminsdk-zmv68-a3dcfdbe88.json
