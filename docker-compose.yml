@@ -1,66 +1,37 @@
-version: "3.7"
-
+version: '3'
 services:
-    url_shortner_database:
-        container_name: url_shortner_database
-        build:
-            context: ./database
-            dockerfile: Dockerfile
-        restart: always
-        environment:
-            MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/username
-            MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/password
-            MONGO_INITDB_DATABASE: $DB_NAME
-            MONGO_INITDB_USERNAME: $DB_USER
-            MONGO_INITDB_PASSWORD: $DB_PASSWORD
-        secrets:
-            - username
-            - password
-        volumes:
-            - url_shortner_db:/data/db
-        ports: 
-            - "27017:27017"
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
 
-    url_shortner:
-        container_name: url_shortner
-        build:
-            context: .
-            dockerfile: Dockerfile
-        restart: always
-        environment: 
-            DB_HOST: $DB_HOST 
-            DB_NAME: $DB_NAME
-            DB_USER: $DB_USER
-            DB_PASSWORD: $DB_PASSWORD
-        volumes: 
-            - .:/app
-            - /app/node_modules
-        ports: 
-            - "8080:8080"
-        depends_on: 
-            - url_shortner_database
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
 
-    url_shortner_database_interface:
-        container_name: url_shortner_database_interface
-        image: mongo-express
-        restart: always
-        ports:
-            - 8081:8081
-        environment:
-            ME_CONFIG_MONGODB_SERVER: url_shortner_database 
-            ME_CONFIG_MONGODB_ADMINUSERNAME_FILE: /run/secrets/username
-            ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/password
-        depends_on: 
-            - url_shortner_database
-        secrets:
-            - username
-            - password
+  client:
+    build:
+      context: ./client
+    ports:
+      - 5173:5173
+    depends_on:
+      - mongodb
+      - server
 
-secrets:
-    username:
-        file: secrets/username.txt
-    password:
-        file: secrets/password.txt
+  server:
+    build:
+      context: ./server
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongodb
 
-volumes: 
-    url_shortner_db:
+volumes:
+  mongodb_data:
