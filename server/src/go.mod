@@ -1,4 +1,4 @@
-module server/urlshortner/fqa
+module src/urlshortner/fqa
 
 go 1.21.6
 
