@@ -357,7 +357,7 @@ func main() {
 			return
 		}
 		log.Println(count)
-		if count >= 7 {
+		if count >= 30 {
 			ctx.JSON(400, gin.H{"err": errors.New("limit of slugs reached")})
 			return
 		}

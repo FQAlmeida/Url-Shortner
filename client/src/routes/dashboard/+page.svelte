@@ -6,9 +6,15 @@
 	import { session } from '@store/auth';
 	import { Heading } from 'flowbite-svelte';
 
-	if (!$session.loggedIn && !$session.loading && browser) {
-		goto('/login');
-	}
+	session.subscribe((s) => {
+		if (s.loading) {
+			return;
+		}
+
+		if (!s.loggedIn && browser) {
+			goto('/login');
+		}
+	});
 </script>
 
 <div class="flex flex-col gap-8">
