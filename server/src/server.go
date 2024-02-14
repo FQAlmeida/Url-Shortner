@@ -70,6 +70,32 @@ func createSlug(slug *Slug, client *mongo.Client) error {
 	}, client)
 }
 
+func countSlugsWithin30Days(userID string, client *mongo.Client) (int64, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	collection := client.Database("url-shortner").Collection("slugs")
+	filter := bson.D{
+		{
+			Key:   "userid",
+			Value: userID,
+		},
+		{
+			Key: "createdat",
+			Value: bson.D{
+				{
+					Key:   "$gte",
+					Value: primitive.NewDateTimeFromTime(time.Now().AddDate(0, 0, -30)),
+				},
+			},
+		},
+	}
+	count, err := collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func deleteSlug(slug_id primitive.ObjectID, uid string, client *mongo.Client) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -103,7 +129,7 @@ func _updateSlug(slug *Slug, client *mongo.Client) error {
 		Key:   "domain",
 		Value: slug.Domain,
 	}, {
-		Key:   "updated_at",
+		Key:   "updatedat",
 		Value: primitive.NewDateTimeFromTime(time.Now()),
 	}}}}
 	_, err := collection.UpdateMany(ctx, filter, updater)
@@ -323,6 +349,16 @@ func main() {
 		}
 		if !exists {
 			ctx.JSON(400, gin.H{"err": errors.New("USER not found")})
+			return
+		}
+		count, err := countSlugsWithin30Days(body.UserID, client)
+		if err != nil {
+			ctx.JSON(500, gin.H{"err": err})
+			return
+		}
+		log.Println(count)
+		if count >= 7 {
+			ctx.JSON(400, gin.H{"err": errors.New("limit of slugs reached")})
 			return
 		}
 
