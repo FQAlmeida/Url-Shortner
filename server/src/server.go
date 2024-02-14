@@ -37,12 +37,37 @@ type SlugCreate struct {
 	UserID string `json:"uid"`
 }
 
-func createSlug(slug *Slug, client *mongo.Client) error {
+type SlugPersistence struct {
+	ID        primitive.ObjectID `json:"id"`
+	Slug      string             `json:"slug"`
+	Domain    string             `json:"redirect"`
+	UserID    string             `json:"uid"`
+	CreatedAt primitive.DateTime `json:"created_at"`
+	UpdatedAt primitive.DateTime `json:"updated_at"`
+}
+
+type EndpointHit struct {
+	Slug     Slug               `json:"slug"`
+	HittedAt primitive.DateTime `json:"hitted_at"`
+}
+
+func _createSlug(slug *SlugPersistence, client *mongo.Client) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	collection := client.Database("url-shortner").Collection("slugs")
 	_, err := collection.InsertOne(ctx, slug)
 	return err
+}
+
+func createSlug(slug *Slug, client *mongo.Client) error {
+	return _createSlug(&SlugPersistence{
+		ID:        slug.ID,
+		Slug:      slug.Slug,
+		Domain:    slug.Domain,
+		UserID:    slug.UserID,
+		CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
+		UpdatedAt: primitive.NewDateTimeFromTime(time.Now()),
+	}, client)
 }
 
 func deleteSlug(slug_id primitive.ObjectID, uid string, client *mongo.Client) error {
@@ -60,7 +85,7 @@ func deleteSlug(slug_id primitive.ObjectID, uid string, client *mongo.Client) er
 	_, err := collection.DeleteOne(ctx, filter)
 	return err
 }
-func updateSlug(slug *Slug, client *mongo.Client) error {
+func _updateSlug(slug *Slug, client *mongo.Client) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	collection := client.Database("url-shortner").Collection("slugs")
@@ -77,33 +102,79 @@ func updateSlug(slug *Slug, client *mongo.Client) error {
 	}, {
 		Key:   "domain",
 		Value: slug.Domain,
+	}, {
+		Key:   "updated_at",
+		Value: primitive.NewDateTimeFromTime(time.Now()),
 	}}}}
 	_, err := collection.UpdateMany(ctx, filter, updater)
 	return err
 }
+func updateSlug(slug *Slug, client *mongo.Client) error {
+	return _updateSlug(slug, client)
+}
 
-func getSlugs(uid string, client *mongo.Client) ([]*Slug, error) {
+func createHit(slug *Slug, client *mongo.Client) error {
+	var ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	collection := client.Database("url-shortner").Collection("hits")
+	_, err := collection.InsertOne(ctx, &EndpointHit{
+		Slug:     *slug,
+		HittedAt: primitive.NewDateTimeFromTime(time.Now()),
+	})
+	return err
+}
+
+func _getSlugs(uid string, client *mongo.Client) ([]*SlugPersistence, error) {
 	filter := bson.D{{
 		Key:   "userid",
 		Value: uid,
 	}}
-	return filterTasks(filter, client)
+	return filterSlugs(filter, client)
 }
-func getSlug(slug string, client *mongo.Client) (*Slug, error) {
+func getSlugs(uid string, client *mongo.Client) ([]*Slug, error) {
+	slugs_persist, err := _getSlugs(uid, client)
+	if err != nil {
+		return nil, err
+	}
+	slugs := make([]*Slug, 0, len(slugs_persist))
+	for _, slug_persist := range slugs_persist {
+		slugs = append(slugs, &Slug{
+			ID:     slug_persist.ID,
+			Slug:   slug_persist.Slug,
+			Domain: slug_persist.Domain,
+			UserID: slug_persist.UserID,
+		})
+	}
+	return slugs, err
+}
+func _getSlug(slug string, client *mongo.Client) (*SlugPersistence, error) {
 	filter := bson.D{{
 		Key:   "slug",
 		Value: slug,
 	}}
-	slugs, err := filterTasks(filter, client)
+	slugs, err := filterSlugs(filter, client)
 	if len(slugs) == 0 {
 		return nil, errors.New("Slug not found")
 	}
-	return slugs[len(slugs)-1], err
+	slug_persist := slugs[len(slugs)-1]
+	return slug_persist, err
+}
+func getSlug(slug string, client *mongo.Client) (*Slug, error) {
+	slug_persist, err := _getSlug(slug, client)
+	if err != nil {
+		return nil, err
+	}
+	slug_data := &Slug{
+		ID:     slug_persist.ID,
+		Slug:   slug_persist.Slug,
+		Domain: slug_persist.Domain,
+		UserID: slug_persist.UserID,
+	}
+	return slug_data, err
 }
 
-func filterTasks(filter interface{}, client *mongo.Client) ([]*Slug, error) {
-	// A slice of slugs for storing the decoded documents
-	var slugs []*Slug
+func filterSlugs(filter interface{}, client *mongo.Client) ([]*SlugPersistence, error) {
+	var slugs []*SlugPersistence
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -114,7 +185,7 @@ func filterTasks(filter interface{}, client *mongo.Client) ([]*Slug, error) {
 		return slugs, err
 	}
 	for cur.Next(ctx) {
-		var t Slug
+		var t SlugPersistence
 		err := cur.Decode(&t)
 		if err != nil {
 			return slugs, err
@@ -131,7 +202,7 @@ func filterTasks(filter interface{}, client *mongo.Client) ([]*Slug, error) {
 	cur.Close(ctx)
 
 	if len(slugs) == 0 {
-		slugs := []*Slug{}
+		slugs := []*SlugPersistence{}
 		return slugs, nil
 	}
 	return slugs, nil
@@ -218,7 +289,7 @@ func main() {
 		}
 		slugs, err := getSlugs(id, client)
 		if err != nil {
-			ctx.JSON(500, gin.H{})
+			ctx.JSON(500, gin.H{"err": err})
 			return
 		}
 		ctx.JSON(200, slugs)
@@ -228,6 +299,11 @@ func main() {
 		slug_data, err := getSlug(slug, client)
 		if err != nil {
 			ctx.JSON(400, gin.H{})
+			return
+		}
+		err = createHit(slug_data, client)
+		if err != nil {
+			ctx.JSON(500, gin.H{"err": err})
 			return
 		}
 		ctx.JSON(200, slug_data)
@@ -250,7 +326,7 @@ func main() {
 			return
 		}
 
-		var slug = &Slug{
+		slug := &Slug{
 			ID:     primitive.NewObjectID(), // use client to gen uuid
 			UserID: body.UserID,
 			Slug:   body.Slug,
@@ -259,7 +335,7 @@ func main() {
 
 		err = createSlug(slug, client)
 		if err != nil {
-			ctx.JSON(500, err)
+			ctx.JSON(500, gin.H{"err": err})
 			return
 		}
 
@@ -281,12 +357,12 @@ func main() {
 		id_str := ctx.Query("id")
 		id, err := primitive.ObjectIDFromHex(id_str)
 		if err != nil {
-			ctx.JSON(500, err)
+			ctx.JSON(500, gin.H{"err": err})
 			return
 		}
 		err = deleteSlug(id, uid, client)
 		if err != nil {
-			ctx.JSON(500, err)
+			ctx.JSON(500, gin.H{"err": err})
 			return
 		}
 
@@ -296,7 +372,7 @@ func main() {
 		slug := &Slug{}
 		err := ctx.ShouldBindBodyWith(slug, binding.JSON)
 		if err != nil {
-			ctx.JSON(400, err)
+			ctx.JSON(400, gin.H{"err": err})
 			return
 		}
 
@@ -312,7 +388,7 @@ func main() {
 
 		err = updateSlug(slug, client)
 		if err != nil {
-			ctx.JSON(500, err)
+			ctx.JSON(500, gin.H{"err": err})
 			return
 		}
 		ctx.JSON(200, bson.D{})
