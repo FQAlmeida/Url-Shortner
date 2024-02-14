@@ -8,24 +8,25 @@ export type Slug = {
     redirect: string;
 };
 
-
+export const error = writable<any>(null);
 
 const create_slugs_store = async () => {
     const { update, subscribe, set } = writable<Slug[]>([]);
 
     const reset_slugs = async () => {
         const uri = new URL(`${SERVER_HOST}/slugs`);
-        uri.searchParams.append("userid", get(session).user?.uid ?? "-1");
-        try {
-            const response = await fetch(uri, { mode: "cors" });
-            const slugs: Slug[] = await response.json();
-            if (!Array.isArray(slugs)) {
-                return;
-            }
-            set(slugs);
-        } catch (e) {
-            console.error(e);
+        const userid = get(session).user?.uid;
+        if (!userid) {
+            return;
         }
+        uri.searchParams.append("userid", userid);
+        const response = await fetch(uri, { mode: "cors" });
+        const slugs: Slug[] = await response.json();
+        if (!Array.isArray(slugs)) {
+            error.set(JSON.stringify(slugs));
+            return;
+        }
+        set(slugs);
     };
 
     session.subscribe((s) => {
@@ -49,6 +50,10 @@ const create_slugs_store = async () => {
             body: JSON.stringify({ ...slug, uid: get(session).user?.uid ?? "-1" }), // body data type must match "Content-Type" header
         });
         const slug_set: Slug = await response.json();
+        if (response.status > 300) {
+            error.set(JSON.stringify(slug_set));
+            return;
+        }
         update((old) => {
             return [...old, slug_set];
         });
@@ -56,7 +61,7 @@ const create_slugs_store = async () => {
 
     const update_slug = async (slug: Slug) => {
         const uri = new URL(`${SERVER_HOST}/slugs`);
-        const _ = await fetch(uri, {
+        const response = await fetch(uri, {
             method: "PUT", // *GET, POST, PUT, DELETE, etc.
             mode: "cors", // no-cors, *cors, same-origin
             headers: {
@@ -67,6 +72,11 @@ const create_slugs_store = async () => {
             referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
             body: JSON.stringify({ ...slug, uid: get(session).user?.uid ?? "-1" }), // body data type must match "Content-Type" header
         });
+        if (response.status > 300) {
+            const err: Slug = await response.json();
+            error.set(JSON.stringify(err));
+            return;
+        }
         update((old) => {
             return old.map((s) => s.id === slug.id ? slug : s);
         });
@@ -76,7 +86,7 @@ const create_slugs_store = async () => {
         const uri = new URL(`${SERVER_HOST}/slugs`);
         uri.searchParams.append("userid", get(session).user?.uid ?? "-1");
         uri.searchParams.append("id", id);
-        const _ = await fetch(uri, {
+        const response = await fetch(uri, {
             method: "DELETE", // *GET, POST, PUT, DELETE, etc.
             mode: "cors", // no-cors, *cors, same-origin
             headers: {
@@ -86,6 +96,11 @@ const create_slugs_store = async () => {
             redirect: "follow", // manual, *follow, error
             referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
         });
+        if (response.status > 300) {
+            const err: Slug = await response.json();
+            error.set(JSON.stringify(err));
+            return;
+        }
         update((old) => {
             return old.filter((slug) => slug.id !== id);
         });
