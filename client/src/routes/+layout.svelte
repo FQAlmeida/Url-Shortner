@@ -38,6 +38,13 @@
 <!-- {#if loading}
 	<SpinnerLoader />
 {:else} -->
+<svelte:head>
+	<script
+		async
+		src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6267954547276558"
+		crossorigin="anonymous"
+	></script>
+</svelte:head>
 <div class="flex min-h-screen min-w-full flex-col">
 	<Navbar />
 	<div class="container mx-auto mb-auto">
