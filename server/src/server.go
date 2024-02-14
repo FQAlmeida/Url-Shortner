@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	firebase "firebase.google.com/go"
@@ -14,6 +16,7 @@ import (
 	"google.golang.org/api/option"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
@@ -317,5 +320,12 @@ func main() {
 		}
 		ctx.JSON(200, bson.D{})
 	})
-	r.Run() // listen and serve on 0.0.0.0:8080
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	defer stop()
+	// r.Run() // listen and serve on 0.0.0.0:8080
+	log.Fatal(autotls.RunWithContext(ctx, r, "*"))
 }
