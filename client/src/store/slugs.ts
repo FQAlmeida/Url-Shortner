@@ -1,5 +1,6 @@
 import { get, writable } from "svelte/store";
 import { session } from "./auth";
+import { SERVER_HOST } from "$lib/consts";
 
 export type Slug = {
     id: string;
@@ -7,8 +8,7 @@ export type Slug = {
     redirect: string;
 };
 
-// const SERVER_HOST = "https://35.190.148.225:8080";
-const SERVER_HOST = "https://localhost:8080";
+
 
 const create_slugs_store = async () => {
     const { update, subscribe, set } = writable<Slug[]>([]);
