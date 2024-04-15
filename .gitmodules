@@ -1,9 +1,3 @@
-[submodule "client"]
-	path = client
-	url = https://github.com/FQAlmeida/Url-Shortner-Client
-[submodule "server"]
-	path = server
-	url = https://github.com/FQAlmeida/Url-Shortner-Server
 [submodule "url-server"]
 	path = url-server
 	url = https://github.com/FQAlmeida/Url-Shortner-Server
