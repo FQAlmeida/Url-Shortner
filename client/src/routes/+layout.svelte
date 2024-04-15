@@ -51,7 +51,7 @@
 </svelte:head>
 <div class="flex min-h-screen min-w-full flex-col">
 	<Navbar />
-	<div class="container mx-auto mb-auto">
+	<div class="container mx-auto my-auto">
 		<slot />
 	</div>
 	<Footer />
