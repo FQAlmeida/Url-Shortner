@@ -27,17 +27,18 @@
 						uid: user?.uid
 					}
 				});
-				goto('/');
+				goto('/dashboard');
 			})
 			.catch((error) => {
 				return error;
 			});
 	}
-
 	async function loginWithGoogle() {
 		const provider = new GoogleAuthProvider();
 		await signInWithPopup(auth, provider)
 			.then((result) => {
+				console.log(result);
+
 				const { displayName, email, photoURL, uid } = result?.user;
 				session.set({
 					loggedIn: true,
@@ -52,6 +53,7 @@
 				goto('/dashboard');
 			})
 			.catch((error) => {
+				console.error(error);
 				return error;
 			});
 	}

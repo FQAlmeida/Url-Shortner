@@ -5,8 +5,8 @@
 	export let slug_base: Slug;
 	export let modal_update_open = false;
 	let modal_open = false;
-	$: slug = slug_base.slug;
-	$: redirect = slug_base.redirect;
+	let slug = slug_base.slug;
+	let redirect = slug_base.redirect;
 	$: temp_slug = {
 		id: slug_base.id,
 		slug: slug,
