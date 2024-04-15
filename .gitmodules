@@ -4,3 +4,9 @@
 [submodule "server"]
 	path = server
 	url = https://github.com/FQAlmeida/Url-Shortner-Server
+[submodule "url-server"]
+	path = url-server
+	url = https://github.com/FQAlmeida/Url-Shortner-Server
+[submodule "url-client"]
+	path = url-client
+	url = https://github.com/FQAlmeida/Url-Shortner-Client
